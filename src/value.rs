@@ -8,10 +8,11 @@ use std::sync::RwLock;
 // pub struct Ref<T> (pub Arc<T>);
 
 #[derive(Debug, Clone)]
-pub struct LPair {
+pub struct LPair (pub LyshValue, pub LyshValue);
+/* {
     pub car: LyshValue,
     pub cdr: LyshValue,
-}
+} */
 
 #[derive(Debug, Clone)]
 pub enum LyshValue {
@@ -29,6 +30,41 @@ pub enum LyshValue {
     Struct  (Rc<()>),
     Other   (Rc<()>),
     Lock    (Arc<RwLock<LyshValue>>),
+}
+
+impl LyshValue {
+    pub fn isAtom(&self) -> bool {
+        match self {
+            LyshValue::Nil      |
+            LyshValue::Bool (_) |
+            LyshValue::Char (_) |
+            LyshValue::Int  (_) |
+            LyshValue::Uint (_) |
+            LyshValue::Float (_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn isImmutable(&self) -> bool {
+        match self {
+            LyshValue::Lock (_) => false,
+            _ => true,
+        }
+    }
+
+    pub fn isNil(&self) -> bool {
+        match self {
+            LyshValue::Nil => true,
+            _ => false,
+        }
+    }
+
+    pub fn isList(&self) -> bool {
+        match self {
+            LyshValue::List (_) => true,
+            _ => false,
+        }
+    }
 }
 
 impl Display for LyshValue {
