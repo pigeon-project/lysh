@@ -1,9 +1,9 @@
 
-use std::fmt::Display;
-use std::fmt::Debug;
-use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::RwLock;
+use std::collections::HashMap;
+use std::fmt::Debug;
+// use std::fmt::Display;
 
 pub type Ref<T> = Arc<T>;
 
@@ -11,6 +11,9 @@ pub type Ref<T> = Arc<T>;
 pub trait LyshObjectShow: std::fmt::Debug {
     fn format(&self) -> String {
         format!("<object {:?}>", self)
+    }
+    fn mem_image(&self) -> Vec<u8> {
+        Vec::new()
     }
 }
 
@@ -28,27 +31,36 @@ pub struct LPair (pub LyshValue, pub LyshValue);
 
 
 #[derive(Debug, Clone)]
-pub struct LStruct (pub (), pub Vec<LyshValue>);
-/* {
-    struct_info: (),
-    item: Vec<LyshValue>,
-} */
+pub struct LStruct {
+    pub struct_info: (),
+    pub item: Vec<LyshValue>,
+}
 
 // LyshNativeInterface
 pub type LNI = Box<fn(*const u8, &Vec<LyshValue>) -> LyshValue>;
 
 #[derive(Clone)]
-pub struct LFunction (pub Ref<String>, pub LyshValue, pub LNI);
+pub struct LFunction {
+    pub name: Ref<String>,
+    pub body: LyshValue,
+    pub exec: LNI,
+}
+
+#[derive(Clone)]
+pub struct LClosure {
+    pub fun: LFunction,
+    pub env: LStruct,
+}
 
 impl Debug for LFunction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "<Function {}>", self.0)
+        write!(f, "<Function {}>", self.name)
     }
 }
 
-impl Display for LFunction {
+impl Debug for LClosure {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "<Function {}>", self.0)
+        write!(f, "<Closure {}>", self.fun.name)
     }
 }
 
@@ -71,7 +83,7 @@ pub enum LyshValue {
     Function(Ref<LFunction>),
     Closure (Ref<()>),
     Lock    (Ref<RwLock<LyshValue>>),
-    Other   (Ref<dyn LyshObjectShow>),
+    Other   (Ref<Arc<dyn LyshObjectShow>>),
 }
 
 impl LyshValue {
@@ -82,7 +94,7 @@ impl LyshValue {
             LyshValue::Char     (_) |
             LyshValue::Uint     (_) |
             LyshValue::Integer  (_) |
-            // LyshValue::Rational (_, _) |
+            // LyshValue::Rational (_) |
             LyshValue::Float    (_) => true,
             _ => false,
         }

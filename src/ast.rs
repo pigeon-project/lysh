@@ -16,7 +16,7 @@ impl RowAst {
             LyshValue::Array    (_) |
             LyshValue::Dict     (_) |
             LyshValue::Struct   (_) |
-            LyshValue::Other    (_) |
+            // LyshValue::Other    (_) |,
             LyshValue::Lock     (_) => false,
             LyshValue::List     (v) =>
                 RowAst::check(&v.0) && ((&v.1).is_list() || (&v.1).is_nil()),
