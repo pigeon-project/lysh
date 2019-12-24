@@ -1,6 +1,7 @@
 
 use crate::value::LyshValue;
 
+#[derive(Debug)]
 pub struct RowAst (pub LyshValue);
 
 impl RowAst {
@@ -17,14 +18,14 @@ impl RowAst {
             LyshValue::Struct   (_) |
             LyshValue::Other    (_) |
             LyshValue::Lock     (_) => false,
-            LyshValue::List     (v) => {
-                RowAst::check(&v.0) && ((&v.1).isList() || (&v.1).isNil())
-            }
+            LyshValue::List     (v) =>
+                RowAst::check(&v.0) && ((&v.1).is_list() || (&v.1).is_nil()),
             _ => true
         }
     }
 }
 
-pub enum AstNode {
-
+#[derive(Debug)]
+pub enum ExecFlow {
+    
 }

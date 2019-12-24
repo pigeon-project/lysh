@@ -1,11 +1,23 @@
 
-use std::fmt;
 use std::fmt::Display;
-use std::rc::Rc;
+use std::fmt::Debug;
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::RwLock;
 
-// pub struct Ref<T> (pub Arc<T>);
+pub type Ref<T> = Arc<T>;
+
+
+pub trait LyshObjectShow: std::fmt::Debug {
+    fn format(&self) -> String {
+        format!("<object {:?}>", self)
+    }
+}
+
+
+#[derive(Debug, Clone)]
+pub struct Rational (pub i64, pub i64);
+
 
 #[derive(Debug, Clone)]
 pub struct LPair (pub LyshValue, pub LyshValue);
@@ -14,52 +26,83 @@ pub struct LPair (pub LyshValue, pub LyshValue);
     pub cdr: LyshValue,
 } */
 
+
+#[derive(Debug, Clone)]
+pub struct LStruct (pub (), pub Vec<LyshValue>);
+/* {
+    struct_info: (),
+    item: Vec<LyshValue>,
+} */
+
+// LyshNativeInterface
+pub type LNI = Box<fn(*const u8, &Vec<LyshValue>) -> LyshValue>;
+
+#[derive(Clone)]
+pub struct LFunction (pub Ref<String>, pub LyshValue, pub LNI);
+
+impl Debug for LFunction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<Function {}>", self.0)
+    }
+}
+
+impl Display for LFunction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<Function {}>", self.0)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum LyshValue {
     Nil,
     Bool    (bool),
     Char    (char),
-    Int     (i64),
-    Uint     (u64),
+    Uint    (u64),
+    Integer (i64),
     Float   (f64),
-    Symbol  (Rc<String>),
-    RString (Rc<String>),
-    Array   (Rc<Vec<LyshValue>>),
-    List    (Rc<LPair>),
-    Dict    (Rc<()>),
-    Struct  (Rc<()>),
-    Other   (Rc<()>),
-    Lock    (Arc<RwLock<LyshValue>>),
+    Rational(Ref<Rational>),
+    Symbol  (Ref<String>),
+    RString (Ref<String>),
+    Array   (Ref<Vec<LyshValue>>),
+    Tuple   (Ref<Vec<LyshValue>>),
+    List    (Ref<LPair>),
+    Dict    (Ref<(HashMap<String, LyshValue>)>),
+    Struct  (Ref<LStruct>),
+    Function(Ref<LFunction>),
+    Closure (Ref<()>),
+    Lock    (Ref<RwLock<LyshValue>>),
+    Other   (Ref<dyn LyshObjectShow>),
 }
 
 impl LyshValue {
-    pub fn isAtom(&self) -> bool {
+    pub fn is_atom(&self) -> bool {
         match self {
-            LyshValue::Nil      |
-            LyshValue::Bool (_) |
-            LyshValue::Char (_) |
-            LyshValue::Int  (_) |
-            LyshValue::Uint (_) |
-            LyshValue::Float (_) => true,
+            LyshValue::Nil          |
+            LyshValue::Bool     (_) |
+            LyshValue::Char     (_) |
+            LyshValue::Uint     (_) |
+            LyshValue::Integer  (_) |
+            // LyshValue::Rational (_, _) |
+            LyshValue::Float    (_) => true,
             _ => false,
         }
     }
 
-    pub fn isImmutable(&self) -> bool {
+    pub fn is_mutable(&self) -> bool {
         match self {
-            LyshValue::Lock (_) => false,
-            _ => true,
+            LyshValue::Lock (_) => true,
+            _ => false,
         }
     }
 
-    pub fn isNil(&self) -> bool {
+    pub fn is_nil(&self) -> bool {
         match self {
             LyshValue::Nil => true,
             _ => false,
         }
     }
 
-    pub fn isList(&self) -> bool {
+    pub fn is_list(&self) -> bool {
         match self {
             LyshValue::List (_) => true,
             _ => false,
@@ -67,24 +110,25 @@ impl LyshValue {
     }
 }
 
-impl Display for LyshValue {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl LyshObjectShow for LyshValue {
+    fn format(&self) -> String {
         match self {
-            LyshValue::Nil => write!(f, "nil"),
-            LyshValue::Bool(v) => write!(f, "{}", v),
-            LyshValue::Char(v) => write!(f, "'{}'", v),
-            LyshValue::Int(v) => write!(f, "{}", v),
-            LyshValue::Uint(v) => write!(f, "{}", v),
-            LyshValue::Float(v) => write!(f, "{}", v),
-            LyshValue::RString(v) => write!(f, "{}", v),
-            LyshValue::Symbol(v) => write!(f, "`{}", v),
-            LyshValue::Array(v) => write!(f, "{:?}", *v),
-            LyshValue::Dict(v) => write!(f, "<dict {:?}>", &v), // FIXME
+            LyshValue::Nil => format!("nil"),
+            LyshValue::Bool(v) => format!("{}", v),
+            LyshValue::Char(v) => format!("'{}'", v),
+            LyshValue::Uint(v) => format!("{}", v),
+            LyshValue::Integer(v) => format!("{}", v),
+            LyshValue::Rational(v) => format!("{}/{}", v.0, v.1),
+            LyshValue::Float(v) => format!("{}", v),
+            LyshValue::RString(v) => format!("{}", v),
+            LyshValue::Symbol(v) => format!("`{}", v),
+            LyshValue::Array(v) => format!("{:?}", *v),
+            LyshValue::Dict(v) => format!("<dict {:?}>", &v), // FIXME
             LyshValue::Lock(v) => {
                 let r = v.read().unwrap();
-                write!(f, "(lock {})", *r)
+                format!("(lock {:?})", *r)
             }
-            _ => write!(f, "<object {}>", &self),
+            _ => format!("<object {:?}>", &self),
         }
     }
 }
