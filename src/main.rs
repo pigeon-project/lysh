@@ -2,6 +2,7 @@
 // mod memory;
 mod value;
 mod ast;
+mod exec_engine;
 
 use std::mem::size_of;
 

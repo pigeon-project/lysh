@@ -37,11 +37,18 @@ pub struct LStruct {
 }
 
 // LyshNativeInterface
-pub type LNI = Box<fn(*const u8, &Vec<LyshValue>) -> LyshValue>;
+pub type LNI = Ref<dyn Fn(LyshValue, &Vec<LyshValue>) -> LyshValue>;
+
+#[derive(Debug, Clone)]
+pub struct FunMataInfo {
+    pub name: Ref<String>,
+    pub target: Ref<String>,
+    pub exec_type: Ref<String>,
+}
 
 #[derive(Clone)]
 pub struct LFunction {
-    pub name: Ref<String>,
+    pub mata: FunMataInfo,
     pub body: LyshValue,
     pub exec: LNI,
 }
@@ -54,13 +61,13 @@ pub struct LClosure {
 
 impl Debug for LFunction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "<Function {}>", self.name)
+        write!(f, "<Function {} '{}'>", self.mata.exec_type, self.mata.name)
     }
 }
 
 impl Debug for LClosure {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "<Closure {}>", self.fun.name)
+        write!(f, "<Closure {} '{}'>", self.fun.mata.exec_type, self.fun.mata.name)
     }
 }
 
@@ -81,7 +88,7 @@ pub enum LyshValue {
     Dict    (Ref<(HashMap<String, LyshValue>)>),
     Struct  (Ref<LStruct>),
     Function(Ref<LFunction>),
-    Closure (Ref<()>),
+    Closure (Ref<LClosure>),
     Lock    (Ref<RwLock<LyshValue>>),
     Other   (Ref<Arc<dyn LyshObjectShow>>),
 }

@@ -1,4 +1,5 @@
 
+use crate::value::Ref;
 use crate::value::LyshValue;
 
 #[derive(Debug)]
@@ -8,7 +9,13 @@ impl RowAst {
     pub fn new(i: &LyshValue) -> Option<Self> {
         if RowAst::check(i) {
             Some(RowAst(i.clone()))
-        } else { None }
+        } else {
+            None
+        }
+    }
+
+    pub fn into_lysh_value(&self) -> LyshValue {
+        self.0.clone()
     }
 
     pub fn check(i: &LyshValue) -> bool {
@@ -26,6 +33,25 @@ impl RowAst {
 }
 
 #[derive(Debug)]
-pub enum ExecFlow {
-    
+pub struct Mir (pub Ref<Vec<LyshValue>>);
+
+impl Mir {
+    pub fn new(i: &Ref<Vec<LyshValue>>) -> Option<Self> {
+        if Mir::check(i) {
+            Some(Mir(i.clone()))
+        } else {
+            None
+        }
+    }
+
+    pub fn into_lysh_value(&self) -> LyshValue {
+        LyshValue::Array(self.0.clone())
+    }
+
+    pub fn check(i: &Ref<Vec<LyshValue>>) -> bool {
+        for item in i.iter() {
+            //TODO: check
+        }
+        true
+    }
 }
