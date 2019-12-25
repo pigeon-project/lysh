@@ -37,8 +37,7 @@ impl AstEngine {
 impl ExecEngine for AstEngine {
     fn new_engine(self) -> LNI {
         Ref::new(move |body, _args| {
-            self.eval_node(body);
-            unreachable!()
+            self.eval_node(body)
         })
     }
 
