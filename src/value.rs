@@ -36,8 +36,14 @@ pub struct LStruct {
     pub item: Vec<LyshValue>,
 }
 
+pub struct ExecError {
+    pub pos: Vec<u64>,
+}
+
+pub type ExecResult = Result<LyshValue, ExecError>;
+
 // LyshNativeInterface
-pub type LNI = Ref<dyn Fn(LyshValue, &Vec<LyshValue>) -> LyshValue>;
+pub type LNI = Ref<dyn Fn(LyshValue, &Vec<LyshValue>) -> ExecResult>;
 
 #[derive(Debug, Clone)]
 pub struct FunMataInfo {
@@ -80,8 +86,8 @@ pub enum LyshValue {
     Integer (i64),
     Float   (f64),
     Rational(Ref<Rational>),
-    Symbol  (Ref<String>),
     RString (Ref<String>),
+    Symbol  (Ref<String>),
     Array   (Ref<Vec<LyshValue>>),
     Tuple   (Ref<Vec<LyshValue>>),
     List    (Ref<LPair>),
@@ -92,6 +98,8 @@ pub enum LyshValue {
     Lock    (Ref<RwLock<LyshValue>>),
     Other   (Ref<Arc<dyn LyshObjectShow>>),
 }
+
+pub struct RowValueImage(pub u64, pub u64);
 
 impl LyshValue {
     pub fn is_atom(&self) -> bool {
