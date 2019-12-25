@@ -108,6 +108,7 @@ pub struct RowValueImage(pub u64, pub u64);
 
 
 impl From<LyshValue> for RowValueImage {
+    #[inline]
     fn from(from: LyshValue) -> Self {
         unsafe {
             *((&from as *const LyshValue) as *const RowValueImage)
@@ -116,14 +117,17 @@ impl From<LyshValue> for RowValueImage {
 }
 
 impl LyshValue {
+    #[inline]
     pub fn get_tag(&self) -> u64 {
         RowValueImage::from(self.clone()).0
     }
 
+    #[inline]
     pub fn get_body(&self) -> u64 {
         RowValueImage::from(self.clone()).1
     }
 
+    #[inline]
     pub fn is_atom(&self) -> bool {
         match self {
             LyshValue::Nil          |
@@ -137,6 +141,7 @@ impl LyshValue {
         }
     }
 
+    #[inline]
     pub fn is_mutable(&self) -> bool {
         match self {
             LyshValue::Lock (_) => true,
@@ -144,6 +149,7 @@ impl LyshValue {
         }
     }
 
+    #[inline]
     pub fn is_nil(&self) -> bool {
         match self {
             LyshValue::Nil => true,
@@ -151,6 +157,7 @@ impl LyshValue {
         }
     }
 
+    #[inline]
     pub fn is_list(&self) -> bool {
         match self {
             LyshValue::List (_) => true,
