@@ -36,9 +36,10 @@ impl AstEngine {
 
 impl ExecEngine for AstEngine {
     fn new_engine(self) -> LNI {
-        Ref::new(move |body, _args| {
-            self.eval_node(body)
-        })
+        LNI::Runtime(Ref::new(
+            move |body, _args| {
+                self.eval_node(body)
+        }))
     }
 
     fn new_debug_engine(self) -> LNI {

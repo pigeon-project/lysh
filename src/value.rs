@@ -43,7 +43,11 @@ pub struct ExecError {
 pub type ExecResult = Result<LyshValue, ExecError>;
 
 // LyshNativeInterface
-pub type LNI = Ref<dyn Fn(LyshValue, &Vec<LyshValue>) -> ExecResult>;
+#[derive(Clone)]
+pub enum LNI {
+    Runtime(Ref<dyn Fn(LyshValue, &Vec<LyshValue>) -> ExecResult>),
+    Native(unsafe extern "C" fn(LyshValue, &Vec<LyshValue>) -> ExecResult),
+}
 
 #[derive(Debug, Clone)]
 pub struct FunMataInfo {
@@ -56,7 +60,7 @@ pub struct FunMataInfo {
 pub struct LFunction {
     pub mata: FunMataInfo,
     pub body: LyshValue,
-    pub exec: LNI,
+    pub exec: Ref<LNI>,
 }
 
 #[derive(Clone)]
@@ -93,15 +97,33 @@ pub enum LyshValue {
     List    (Ref<LPair>),
     Dict    (Ref<(HashMap<String, LyshValue>)>),
     Struct  (Ref<LStruct>),
-    Function(Ref<LFunction>),
-    Closure (Ref<LClosure>),
+    Function(Ref<RwLock<LFunction>>),
+    Closure (Ref<RwLock<LClosure>>),
     Lock    (Ref<RwLock<LyshValue>>),
-    Other   (Ref<Arc<dyn LyshObjectShow>>),
+    Other   (Ref<Box<dyn LyshObjectShow>>),
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct RowValueImage(pub u64, pub u64);
 
+
+impl From<LyshValue> for RowValueImage {
+    fn from(from: LyshValue) -> Self {
+        unsafe {
+            *((&from as *const LyshValue) as *const RowValueImage)
+        }
+    }
+}
+
 impl LyshValue {
+    pub fn get_tag(&self) -> u64 {
+        RowValueImage::from(self.clone()).0
+    }
+
+    pub fn get_body(&self) -> u64 {
+        RowValueImage::from(self.clone()).1
+    }
+
     pub fn is_atom(&self) -> bool {
         match self {
             LyshValue::Nil          |
@@ -159,3 +181,11 @@ impl LyshObjectShow for LyshValue {
         }
     }
 }
+
+
+
+
+
+// pub struct XXX (
+    // pub Ref<libl::Library>,
+    // pub libl::Symbol<owning_ref::ArcRef<unsafe extern fn(&Vec<LyshValue>) -> ExecResult>>);
